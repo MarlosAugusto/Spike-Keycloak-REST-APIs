@@ -1,4 +1,5 @@
 import KeycloakAdminClient from 'keycloak-admin';
+import { Credentials } from 'keycloak-admin/lib/utils/auth';
 import { cnpj, cpf } from 'cpf-cnpj-validator';
 import { RoleMappingPayload } from 'keycloak-admin/lib/defs/roleRepresentation';
 // import KeycloakConnect from 'keycloak-connect';
@@ -6,16 +7,48 @@ import { RoleMappingPayload } from 'keycloak-admin/lib/defs/roleRepresentation';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const createGroupAndUsers = async () => {
-    const admin = new KeycloakAdminClient({
-        baseUrl: 'https://keycloak.keycloak.example.com/auth',
-        realmName: 'spike'
-    })
+    function getAdmin(): KeycloakAdminClient {
+        return new KeycloakAdminClient({
+            baseUrl: 'https://keycloak.keycloak.example.com/auth',
+            realmName: 'spike',
+        });
+    }
+    async function getKeycloakAdminClientAuthenticated() {
+        const credentials = {
+            grantType: 'client_credentials',
+            clientId: 'spike',
+            clientSecret: '31f69a3f-0649-4be5-b86a-29ecc1de824f',
+        } as Credentials;
+        
+        const keycloakAdminClient = getAdmin();
+        
+        await keycloakAdminClient.auth(credentials).catch((authAdminError) => {
+            // console.log({authAdminError});
+            console.log({authAdminErrorData: authAdminError.response.data});
+        });
+        
+        return keycloakAdminClient;
+    }
     
-    await admin.auth({
+    const keycloakAdminClient = await getKeycloakAdminClientAuthenticated();
+
+    const users = await keycloakAdminClient.users.find({ username: 'testpass' })
+    .catch((userErro) => {
+        console.log({userErro});
+        console.log({userErroData: userErro.response.data});
+    });
+    console.log({users})
+    console.log({requiredActions: users[0].requiredActions})
+    await keycloakAdminClient.auth({
+        username: 'testpass',
+        password: 'test',
+        grantType: 'password',
         clientId: 'spike',
         clientSecret: '31f69a3f-0649-4be5-b86a-29ecc1de824f',
-        grantType: 'client_credentials',
-    }).catch((err) => console.log({err}))
+    }).catch((authError) => {
+        // console.log({authError});
+        console.log({authErrorData: authError.response.data});
+    })
 
     const profile_roles = {
         consultant: 'profile-consultant',
@@ -35,132 +68,132 @@ const createGroupAndUsers = async () => {
         completeName?: string;
     }
     
-    const groupName = cnpj.generate();
-    console.log({ groupName });
+    // const groupName = cnpj.generate();
+    // console.log({ groupName });
 
     try {
-        const roles = await admin.roles.find({
-            realm: 'spike',
-        });
-        console.log({roles})
-        const { id: groupId } = await admin.groups.create({
-            name: groupName,
-        })
-        console.log({ groupId });
-        console.log({master:roles.find((role) => role.name === profile_roles.master).id})
-        const user1 = {
-            groups: [groupName],
-            realmRoles: [],
-            email: 'marlos.a.gomes@db1.com.br',
-            emailVerified: true,
-            enabled: true,
-            firstName: 'Marlos',
-            username: `${groupName}Marlos`,
-            attributes: {
-                accounts: [1234],
-                cellphone: '046984034699',
-                cnpj: groupName,
-                cpf: cpf.generate(),
-                idClientAssociation: 4321,
-                completeName: 'Marlos Augusto Martins Gomes',
-                nickname: 'Marlos'    
-            } as IAttributes,
-            credentials: [{
-              temporary: false,
-              type: 'password',
-              value: 'SenhaBaguah',
-            }],
-            realm: 'spike'
-        }
-        const { id: user1Id } = await admin.users.create(user1);
-        await admin.users.addRealmRoleMappings({
-            id: user1Id,
-            roles: [roles.find((role) => role.name === profile_roles.master) as RoleMappingPayload]});
-        console.log({ user1 });
+        // const roles = await keycloakAdminClient.roles.find({
+        //     realm: 'spike',
+        // });
+        // console.log({roles})
+        // const { id: groupId } = await keycloakAdminClient.groups.create({
+        //     name: groupName,
+        // })
+        // console.log({ groupId });
+        // console.log({master:roles.find((role) => role.name === profile_roles.master).id})
+        // const user1 = {
+        //     groups: [groupName],
+        //     realmRoles: [],
+        //     email: 'marlos.a.gomes@db1.com.br',
+        //     emailVerified: true,
+        //     enabled: true,
+        //     firstName: 'Marlos',
+        //     username: `${groupName}Marlos`,
+        //     attributes: {
+        //         accounts: [1234],
+        //         cellphone: '046984034699',
+        //         cnpj: groupName,
+        //         cpf: cpf.generate(),
+        //         idClientAssociation: 4321,
+        //         completeName: 'Marlos Augusto Martins Gomes',
+        //         nickname: 'Marlos'    
+        //     } as IAttributes,
+        //     credentials: [{
+        //       temporary: false,
+        //       type: 'password',
+        //       value: 'SenhaBaguah',
+        //     }],
+        //     realm: 'spike'
+        // }
+        // const { id: user1Id } = await keycloakAdminClient.users.create(user1);
+        // await keycloakAdminClient.users.addRealmRoleMappings({
+        //     id: user1Id,
+        //     roles: [roles.find((role) => role.name === profile_roles.master) as RoleMappingPayload]});
+        // console.log({ user1 });
 
-        const user2 = {
-            groups: [groupName],
-            email: 'marlos.b.gomes@db1.com.br',
-            emailVerified: true,
-            enabled: true,
-            firstName: 'Augusto',
-            username: `${groupName}Augusto`,
-            attributes: {
-                accounts: [1234],
-                cellphone: '046984034699',
-                cnpj: groupName,
-                cpf: cpf.generate(),
-                idClientAssociation: 4321,
-                completeName: 'Augusto Marlos Martins Gomes',
-                nickname: 'Augusto'    
-            } as IAttributes,
-            credentials: [{
-              temporary: false,
-              type: 'password',
-              value: 'SenhaBaguah',
-            }]
-        }
-        const { id: user2Id } = await admin.users.create(user2);
-        await admin.users.addRealmRoleMappings({
-            id: user2Id,
-            roles: [roles.find((role) => role.name === profile_roles.authorizer) as RoleMappingPayload]});
-        console.log({ user2 });
+        // const user2 = {
+        //     groups: [groupName],
+        //     email: 'marlos.b.gomes@db1.com.br',
+        //     emailVerified: true,
+        //     enabled: true,
+        //     firstName: 'Augusto',
+        //     username: `${groupName}Augusto`,
+        //     attributes: {
+        //         accounts: [1234],
+        //         cellphone: '046984034699',
+        //         cnpj: groupName,
+        //         cpf: cpf.generate(),
+        //         idClientAssociation: 4321,
+        //         completeName: 'Augusto Marlos Martins Gomes',
+        //         nickname: 'Augusto'    
+        //     } as IAttributes,
+        //     credentials: [{
+        //       temporary: false,
+        //       type: 'password',
+        //       value: 'SenhaBaguah',
+        //     }]
+        // }
+        // const { id: user2Id } = await keycloakAdminClient.users.create(user2);
+        // await keycloakAdminClient.users.addRealmRoleMappings({
+        //     id: user2Id,
+        //     roles: [roles.find((role) => role.name === profile_roles.authorizer) as RoleMappingPayload]});
+        // console.log({ user2 });
 
-        const user3 = {
-            groups: [groupName],
-            email: 'marlos.c.gomes@db1.com.br',
-            emailVerified: true,
-            enabled: true,
-            firstName: 'Martins',
-            username: `${groupName}Martins`,
-            attributes: {
-                accounts: [1234],
-                cellphone: '046984034699',
-                cnpj: groupName,
-                cpf: cpf.generate(),
-                idClientAssociation: 4321,
-                completeName: 'Martins Marlos Augusto Gomes',
-                nickname: 'Martins'    
-            } as IAttributes,
-            credentials: [{
-              temporary: false,
-              type: 'password',
-              value: 'SenhaBaguah',
-            }]
-        }
-        const { id: user3Id } = await admin.users.create(user3);
-        await admin.users.addRealmRoleMappings({
-            id: user3Id,
-            roles: [roles.find((role) => role.name === profile_roles.launcher) as RoleMappingPayload]});
-        console.log({ user3 });
+        // const user3 = {
+        //     groups: [groupName],
+        //     email: 'marlos.c.gomes@db1.com.br',
+        //     emailVerified: true,
+        //     enabled: true,
+        //     firstName: 'Martins',
+        //     // username: `${groupName}Martins`,
+        //     attributes: {
+        //         accounts: [1234],
+        //         cellphone: '046984034699',
+        //         cnpj: groupName,
+        //         cpf: cpf.generate(),
+        //         idClientAssociation: 4321,
+        //         completeName: 'Martins Marlos Augusto Gomes',
+        //         nickname: 'Martins'    
+        //     } as IAttributes,
+            // credentials: [{
+            //   temporary: false,
+            //   type: 'password',
+            //   value: 'SenhaBaguah',
+            // }]
+        // }
+        // const { id: user3Id } = await keycloakAdminClient.users.create(user3);
+        // await keycloakAdminClient.users.addRealmRoleMappings({
+        //     id: user3Id,
+        //     roles: [roles.find((role) => role.name === profile_roles.launcher) as RoleMappingPayload]});
+        // console.log({ user3 });
 
-        const user4 = {
-            groups: [groupName],
-            email: 'marlos.d.gomes@db1.com.br',
-            emailVerified: true,
-            enabled: true,
-            firstName: 'Gomes',
-            username: `${groupName}Gomes`,
-            attributes: {
-                accounts: [1234],
-                cellphone: '046984034699',
-                cnpj: groupName,
-                cpf: cpf.generate(),
-                idClientAssociation: 4321,
-                completeName: 'Gomes Marlos Augusto Martins',
-                nickname: 'Gomes'    
-            } as IAttributes,
-            credentials: [{
-              temporary: false,
-              type: 'password',
-              value: 'SenhaBaguah',
-            }]
-        }
-        const { id: user4Id } = await admin.users.create(user4);
-        await admin.users.addRealmRoleMappings({
-            id: user4Id,
-            roles: [roles.find((role) => role.name === profile_roles.consultant) as RoleMappingPayload]});
-        console.log({ user4 });
+        // const user4 = {
+        //     groups: [groupName],
+        //     email: 'marlos.d.gomes@db1.com.br',
+        //     emailVerified: true,
+        //     enabled: true,
+        //     firstName: 'Gomes',
+        //     username: `${groupName}Gomes`,
+        //     attributes: {
+        //         accounts: [1234],
+        //         cellphone: '046984034699',
+        //         cnpj: groupName,
+        //         cpf: cpf.generate(),
+        //         idClientAssociation: 4321,
+        //         completeName: 'Gomes Marlos Augusto Martins',
+        //         nickname: 'Gomes'    
+        //     } as IAttributes,
+        //     credentials: [{
+        //       temporary: false,
+        //       type: 'password',
+        //       value: 'SenhaBaguah',
+        //     }]
+        // }
+        // const { id: user4Id } = await keycloakAdminClient.users.create(user4);
+        // await keycloakAdminClient.users.addRealmRoleMappings({
+        //     id: user4Id,
+        //     roles: [roles.find((role) => role.name === profile_roles.consultant) as RoleMappingPayload]});
+        // console.log({ user4 });
     } catch (error) {
         console.log({respo: error.response})
         console.log({data: error.response.data})
