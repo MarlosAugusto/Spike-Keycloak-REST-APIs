@@ -37,41 +37,59 @@ const createGroupAndUsers = async () => {
         console.log({userErro});
         console.log({userErroData: userErro.response.data});
     });
-    console.log({users})
-    console.log({requiredActions: users[0].requiredActions})
+    const user = users[0];
+    console.log({ user })
+    console.log({requiredActions: user.requiredActions})
+
+    const pass = cpf.generate();
+    await keycloakAdminClient.users.resetPassword({
+        credential: {
+            type: 'password',
+            value: pass,
+            temporary:false,
+        },
+        id: user.id
+    }).catch((resetPassError) => {
+        console.log({resetPassErrorData: resetPassError.response.data});
+    })
+
     await keycloakAdminClient.auth({
         username: 'testpass',
-        password: 'test',
+        password: pass,
         grantType: 'password',
         clientId: 'spike',
         clientSecret: '31f69a3f-0649-4be5-b86a-29ecc1de824f',
-    }).catch((authError) => {
-        // console.log({authError});
+    })
+    .catch((authError) => {
         console.log({authErrorData: authError.response.data});
     })
 
-    const profile_roles = {
-        consultant: 'profile-consultant',
-        launcher: 'profile-launcher',
-        authorizer: 'profile-authorizer',
-        master: 'profile-master',
-    };
+    const { accessToken, realmName, refreshToken } = keycloakAdminClient;
+    console.log({ accessToken, realmName, refreshToken })
 
-    interface IAttributes {
-        accounts: number[];
-        cellphone: string;
-        cnpj: string;
-        cpf: string;
-        idClientAssociation: number;
-        idClient?: string;
-        nickname?: string;
-        completeName?: string;
-    }
+
+    // const profile_roles = {
+        // consultant: 'profile-consultant',
+        // launcher: 'profile-launcher',
+        // authorizer: 'profile-authorizer',
+        // master: 'profile-master',
+    // };
+    
+    // interface IAttributes {
+        // accounts: number[];
+        // cellphone: string;
+        // cnpj: string;
+        // cpf: string;
+        // idClientAssociation: number;
+        // idClient?: string;
+        // nickname?: string;
+        // completeName?: string;
+    // }
     
     // const groupName = cnpj.generate();
     // console.log({ groupName });
 
-    try {
+    // try {
         // const roles = await keycloakAdminClient.roles.find({
         //     realm: 'spike',
         // });
@@ -194,11 +212,11 @@ const createGroupAndUsers = async () => {
         //     id: user4Id,
         //     roles: [roles.find((role) => role.name === profile_roles.consultant) as RoleMappingPayload]});
         // console.log({ user4 });
-    } catch (error) {
-        console.log({respo: error.response})
-        console.log({data: error.response.data})
-        throw error        
-    }
+    // } catch (error) {
+        // console.log({respo: error.response})
+        // console.log({data: error.response.data})
+        // throw error        
+    // }
 };
 
 createGroupAndUsers();
