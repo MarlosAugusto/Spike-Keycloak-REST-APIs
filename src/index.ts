@@ -32,41 +32,63 @@ const createGroupAndUsers = async () => {
     
     const keycloakAdminClient = await getKeycloakAdminClientAuthenticated();
 
-    const users = await keycloakAdminClient.users.find({ username: 'testpass' })
-    .catch((userErro) => {
-        console.log({userErro});
-        console.log({userErroData: userErro.response.data});
-    });
-    const user = users[0];
-    console.log({ user })
-    console.log({requiredActions: user.requiredActions})
-
-    const pass = cpf.generate();
-    await keycloakAdminClient.users.resetPassword({
-        credential: {
-            type: 'password',
-            value: pass,
-            temporary:false,
-        },
-        id: user.id
-    }).catch((resetPassError) => {
-        console.log({resetPassErrorData: resetPassError.response.data});
+    const updatedUser = await keycloakAdminClient.users.update({
+        id: 'c53e74c0-ea50-4dee-bef3-e46ea3dc834a',
+    },
+    {
+        enabled: false,
+        email: 'marlos.x.gomes@db1.com.br',
+        attributes:{
+            cellphone: '046984034699',
+        }
     })
+    console.log({updatedUser})
 
-    await keycloakAdminClient.auth({
-        username: 'testpass',
-        password: pass,
-        grantType: 'password',
-        clientId: 'spike',
-        clientSecret: '31f69a3f-0649-4be5-b86a-29ecc1de824f',
-    })
-    .catch((authError) => {
-        console.log({authErrorData: authError.response.data});
-    })
+    // const users = await keycloakAdminClient.users.find({ username: 'testpass' })
+    // .catch((userErro) => {
+    //     console.log({userErro});
+    //     console.log({userErroData: userErro.response.data});
+    // });
+    // const user = users[0];
+    // console.log({ user })
+    // console.log({requiredActions: user.requiredActions})
 
-    const { accessToken, realmName, refreshToken } = keycloakAdminClient;
-    console.log({ accessToken, realmName, refreshToken })
+    // const pass = cpf.generate();
+    // await keycloakAdminClient.users.resetPassword({
+    //     credential: {
+    //         type: 'password',
+    //         value: pass,
+    //         temporary:false,
+    //     },
+    //     id: user.id
+    // }).catch((resetPassError) => {
+    //     console.log({resetPassErrorData: resetPassError.response.data});
+    // })
 
+    // await keycloakAdminClient.auth({
+    //     username: 'testpass',
+    //     password: pass,
+    //     grantType: 'password',
+    //     clientId: 'spike',
+    //     clientSecret: '31f69a3f-0649-4be5-b86a-29ecc1de824f',
+    // })
+    // .catch((authError) => {
+    //     console.log({authErrorData: authError.response.data});
+    // })
+
+    // const { accessToken, realmName, refreshToken } = keycloakAdminClient;
+    // console.log({ accessToken, realmName, refreshToken })
+
+    // const groupName = '68352846245828';
+    // const groups = await keycloakAdminClient.groups.find({
+    //     search: groupName
+    // })
+    // const group = groups.find((gp) => gp.name === groupName);
+    // console.log({group})
+    // const groupMembers = await keycloakAdminClient.groups.listMembers({
+    //     id: group.id
+    // })
+    // console.log({groupMembers})
 
     // const profile_roles = {
         // consultant: 'profile-consultant',
